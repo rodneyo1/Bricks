@@ -2,22 +2,60 @@
 
 ![Bricks desktop app](docs/images/bricks-desktop.png)
 
-Low-latency remote input and, eventually, a complete game-streaming system. The ambition is to outperform Sunshine + Moonlight on measured input-to-photon latency at comparable visual quality and stability.
+Low-latency remote keyboard and mouse input for Windows, written in Rust.
 
-The Rust foundation includes validated configuration, a reference codec, deterministic key state, a Windows capture/receipt test window, key diagnostics, DPAPI-protected identities, verified trust/ownership, and a live recording-only QUIC probe. Live remote OS control is not implemented yet. No two-PC or physical gaming benchmark results exist.
+## Features
 
-A transport-independent key-recovery engine and a [one-command virtual-time fault check](docs/recovery-selftest.md) exercise retries, ordering, overflow, session isolation and recorded cleanup. The new [authenticated QUIC recovery harness](docs/single-pc-agent-and-recovery.md) also exercises that engine over real encrypted loopback traffic; the original stop-and-wait probe remains separate.
+- **Desktop GUI** – a Slint app for saving PCs, changing settings, setting up identities and running local checks.
+- **Headless agent** – a per-user background service that holds all state. The GUI and CLI tools talk to it over a local named pipe, so it runs fine with no window open.
+- **Command-line tools** – `bricks-host`, `bricks-client`, `bricks-lab` and `bricks-bench` for configuration, probes, self-tests and benchmarks.
+- **Encrypted QUIC transport** – mutual TLS 1.3, with keys stored using Windows DPAPI.
+- **Key recovery** – retries, reordering and cleanup so a dropped packet never leaves a key stuck down.
+- **Strict config** – versioned TOML profiles, validated on load.
+
+## Status
+
+Working: the GUI, the agent, encrypted loopback transport and the recovery tests.
+Not done yet: live remote input between two PCs, pairing and video streaming. These buttons are disabled in the app.
+
+## Quick start
+
+Double-click **Start Bricks**, or open `dist\BricksDesktop\Bricks.exe`.
+
+Run the recovery self-test:
 
 ```powershell
 .\target\debug\bricks-host.exe recovery-selftest
 ```
 
-Start with the [documentation index](docs/README.md), [design review](docs/design-review.md), and [targets and benchmarks](docs/targets-and-benchmarks.md).
+Run the encrypted loopback probe:
 
-Desktop app: double-click **Start Bricks**, or open `dist\BricksDesktop\Bricks.exe`. The simple Slint frontend saves/edits/forgets PCs, persists settings, sets up protected local identities, and shows event feedback. Local checks and JSON report export live under Settings > Advanced. See [desktop instructions](docs/slint-desktop.md).
+```powershell
+.\target\debug\bricks-host.exe probe-selftest 100
+```
 
-The toolkit-independent controller now runs in a separate per-user Rust agent, connected through a restricted named-pipe SDK. Critical-key recovery also runs over actual recording-only QUIC, with a [single-PC fault/lifecycle/performance suite](docs/single-pc-agent-and-recovery.md). **Live remote OS input, code pairing and video are not available yet**; their UI actions remain disabled. See [frontend design](docs/frontend-design.md) and [SDK contract](docs/control-sdk.md).
+## Build
 
-The previous WinForms [diagnostic launcher](docs/desktop-ui.md) remains separately available at `dist\Bricks\Bricks.exe` for foreground input tests and fingerprint-verified recording-only two-PC tests.
+Requires Rust 1.99.1 (pinned) and the MSVC build tools.
 
-Build/test instructions and exact implementation limits are in [development status](docs/development.md).
+```powershell
+cargo test --workspace --locked
+powershell -ExecutionPolicy Bypass -File tools/build-desktop.ps1
+```
+
+## Layout
+
+| Crate | Purpose |
+| --- | --- |
+| `bricks-ui` | Slint desktop app |
+| `bricks-agent` | Headless background agent |
+| `bricks-control` | Named-pipe SDK shared by the GUI and CLI |
+| `bricks-transport` | QUIC, TLS, identities and recovery |
+| `bricks-core` | Key state and recovery logic |
+| `bricks-protocol` | Wire format |
+| `bricks-input-windows` | Windows input capture and injection |
+| `bricks-config` | TOML config and validation |
+| `bricks-host`, `bricks-client` | Host and client CLIs |
+| `bricks-lab`, `bricks-bench` | Stress tests and benchmarks |
+
+More detail is in [docs](docs/README.md).
