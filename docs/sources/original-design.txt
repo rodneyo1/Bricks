@@ -1,0 +1,190 @@
+Below is a design doc you can hand straight to Claude/Codex. I've kept Outlier out of the prose except where it's load-bearing.
+
+---
+
+# Project: Low-Latency Input-Focused Remote Agent
+
+## 1. Purpose
+
+Build a minimal remote control agent optimized for **input fidelity** — specifically, preserving the timing characteristics of local keyboard and mouse events across a network — with video treated as a secondary concern. Intended for workloads where input timing matters more than visual fidelity.
+
+## 2. Non-Goals
+
+- Not a full remote desktop replacement.
+- Not a video codec project.
+- Not a file transfer / clipboard sync tool (initially).
+- Not a multi-user or enterprise product.
+
+## 3. Design Principles
+
+1. **Input is the product.** Every architectural decision favors input timing fidelity over everything else.
+2. **Video is optional and pluggable.** The agent works without video. Any screen transport (VNC, RDP, Sunshine) can run alongside it.
+3. **Minimal surface area.** Small codebase, few dependencies, everything auditable.
+4. **Transport-agnostic.** Runs over any IP tunnel (Tailscale, WireGuard, LAN). No custom NAT traversal in v1.
+5. **Deterministic re-timing.** Host-side event injection uses a sampled human-timing model, not raw packet-arrival timing.
+
+## 4. System Architecture
+
+```
+┌──────────────────────┐                    ┌──────────────────────┐
+│   CLIENT (local)     │                    │   HOST (remote)      │
+│                      │                    │                      │
+│  ┌────────────────┐  │                    │  ┌────────────────┐  │
+│  │ Input Capture  │  │                    │  │ Input Injector │  │
+│  │ (global hooks) │  │                    │  │ (uinput/SendIn)│  │
+│  └───────┬────────┘  │                    │  └───────▲────────┘  │
+│          │           │                    │          │           │
+│          ▼           │                    │  ┌───────┴────────┐  │
+│  ┌────────────────┐  │   UDP / tunnel     │  │ Re-timing      │  │
+│  │ Event Packer   │──┼───────────────────▶│  │ Scheduler      │  │
+│  │ (seq + ts)     │  │                    │  │ (log-normal)   │  │
+│  └────────────────┘  │                    │  └───────▲────────┘  │
+│                      │                    │          │           │
+│  ┌────────────────┐  │                    │  ┌───────┴────────┐  │
+│  │ Control Channel│◀─┼────────────────────┼──│ Event Receiver │  │
+│  │ (handshake)    │  │                    │  │ (seq + jitter) │  │
+│  └────────────────┘  │                    │  └────────────────┘  │
+│                      │                    │                      │
+│  [optional] VNC/RDP ─┼────────────────────┼─▶ [optional] Screen  │
+└──────────────────────┘                    └──────────────────────┘
+```
+
+**Components:**
+
+- **Input Capture (client):** OS-level hooks on all input devices. Emits structured events with local monotonic timestamps.
+- **Event Packer (client):** Serializes events into a compact wire format. Adds sequence numbers. Batches only if beneficial; never reorders.
+- **Control Channel:** Small reliable channel (TCP or a reliable layer) for handshake, capability negotiation, and keepalive. Input rides UDP.
+- **Event Receiver (host):** Accepts UDP packets, handles reordering, feeds the scheduler.
+- **Re-timing Scheduler (host):** The core novel piece. Buffers keydown/keyup pairs and schedules injection with sampled inter-event delays.
+- **Input Injector (host):** Platform-specific low-level injection.
+
+## 5. Event Model
+
+Every input event is a tagged struct:
+
+```
+Event {
+  seq:      u64        // monotonic per-session
+  ts_local: u64        // client monotonic nanoseconds at capture
+  kind:     EventKind  // KeyDown, KeyUp, MouseMove, MouseButton, ...
+  code:     u16        // platform-neutral scancode
+  value:    i32        // press/release/relative delta
+  flags:    u8         // modifiers, coalescing hints
+}
+```
+
+**Wire format:** fixed-size header + varint payload. Target < 16 bytes per key event. Mouse move events coalesce client-side at a configurable interval (default 8ms) to bound packet rate.
+
+## 6. Re-Timing Model (the core)
+
+**Problem:** If events are injected on packet arrival, inter-event deltas reflect network jitter, not human motor noise.
+
+**Solution:** On the host, do not inject on arrival. Instead:
+
+1. **KeyDown** arrives → inject immediately (or with a small fixed lead).
+2. **KeyUp** arrives → schedule injection at `arrival_time + sampled_hold_duration`, where `sampled_hold_duration` is drawn from a per-key distribution.
+
+This makes the *observed* keydown→keyup gap a function of the model, not the network.
+
+**Distribution:** log-normal, parameters fit from a local baseline capture. Per-key modifiers (home row vs. pinky keys) optional in v2.
+
+**Tradeoff:** adds up to ~1 mean hold-duration of latency to key release. For typing workloads this is invisible.
+
+**Configuration:**
+
+```
+retiming.enabled: true
+retiming.model: lognormal
+retiming.mu: <fitted>
+retiming.sigma: <fitted>
+retiming.min_hold_ms: 30
+retiming.max_hold_ms: 250
+```
+
+**Validation hook:** capture `keydown_ts`, `keyup_ts`, and `scheduled_hold` for every event to a local log for offline analysis.
+
+## 7. Transport
+
+**v1:** UDP over an existing tunnel (Tailscale/WireGuard). No NAT traversal, no relay — the tunnel provides it.
+
+**Packet types:**
+
+- `INPUT` — one or more events.
+- `ACK` — receiver → sender, cumulative seq.
+- `PING` / `PONG` — keepalive + RTT measurement.
+- `HELLO` / `HELLO_ACK` — control channel handshake.
+
+**Loss handling:** sequence numbers + NACK. Retransmit only on NACK. Because input volume is tiny (worst case a few hundred events/sec during fast typing), this is trivial.
+
+**Jitter buffer:** small, target 1–2ms. Larger buffers help ordering but add latency.
+
+## 8. Input Injection (platform layer)
+
+**Linux host:**
+
+- `uinput` — creates a real virtual HID device. Closest to physical. Preferred.
+- `evdev` write-back as fallback.
+- Emits `EV_KEY` / `EV_REL` events.
+
+**Windows host:**
+
+- `SendInput` with `KEYEVENTF_SCANCODE` (not virtual keys) — preserves scancode semantics.
+
+**macOS host (v2):**
+
+- `CGEventPost` with explicit down/up and source state set.
+
+**Key rule:** always send discrete down and up events. Never batch into a single synthesized action.
+
+## 9. Client Input Capture
+
+**Linux client:**
+
+- `evdev` grab on `/dev/input/event*` for keyboards and mice.
+- Emits raw scancodes; does not translate to keysyms.
+
+**Windows client:**
+
+- Low-level hooks: `WH_KEYBOARD_LL`, `WH_MOUSE_LL`.
+- Emits scancodes.
+
+**Key rule:** capture at the lowest layer available. Do not use text-level APIs.
+
+## 10. Control Channel
+
+Separate from input. Handles:
+
+- Version negotiation.
+- Capability flags (video present, clipboard present).
+- Session start/stop.
+- Auth token (v1: static shared secret).
+
+**Transport:** TCP, or a reliable layer over the same UDP socket. Keep it boring.
+
+## 11. Configuration
+
+Single TOML file per side. No remote config in v1.
+
+## 12. Observability
+
+This is not optional — the whole project exists to measure timing.
+
+- **Client:** log every captured event with `ts_local`, `seq`, `code`, `value`.
+- **Host:** log every received event with `ts_arrival`, `seq`, and for re-timed events, `ts_inject`, `scheduled_hold`.
+- **Metrics:** RTT (from PING), loss rate, reorder rate, jitter buffer occupancy, mean/p95 hold time observed on host.
+
+All logs are newline-delimited JSON, one file per session.
+
+## 13. Milestones
+
+**M0 — Capture + replay, no network.**
+Client captures events, dumps to log. Host replays a log file through the injector. Validates the injection path and the timing model offline.
+
+**M1 — Live UDP, no re-timing.**
+End-to-end live path with raw injection on arrival. Establishes baseline jitter.
+
+**M2 — Re-timing.**
+Add the scheduler and the log-normal model. Compare M1 vs. M2 host-side hold-time distributions.
+
+**M3 — Polish.**
+Loss handling, NACK, observability,

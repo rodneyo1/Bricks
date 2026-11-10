@@ -1,0 +1,36 @@
+BRICKS DESKTOP
+
+Double-click Bricks.exe. No terminal or Rust installation is needed to run it.
+
+Computers: Add PC, select it, then Edit or Forget. Use its LAN, Tailscale or
+WireGuard IP address. Entries and settings survive restarting the application.
+
+Share this PC: Set up this PC creates or reuses Windows-protected identities.
+It never starts sharing, replaces an existing private key or trusts another PC.
+
+Settings: Change this computer's name and the default port for new entries.
+Advanced contains recording-only recovery/QUIC/network recovery checks,
+confirmed cancellation and report export.
+
+The bundled bricks-agent.exe runs headlessly and connects to the UI automatically.
+Keep both executables in this folder. It exits after 30 seconds without clients
+or operations; opening Bricks starts it again. Connection loss displays clear
+feedback and refreshes saved state when the agent returns.
+
+This build does not yet provide live remote input, code pairing, background
+sharing or video streaming. Connect and Start sharing are disabled
+with an explanation. A saved computer is not assumed to be online or paired.
+
+Data: %LOCALAPPDATA%\Bricks
+Public certificates: %LOCALAPPDATA%\Bricks\public
+Exported reports: %LOCALAPPDATA%\Bricks\reports
+
+The older WinForms diagnostic launcher in dist\Bricks is a separate developer
+tool. Start Bricks opens this Slint application instead.
+
+Windows 10/11 x64. Keep this folder together when copying to another PC.
+If Windows reports a missing Microsoft C++ runtime DLL, install the Microsoft
+Visual C++ 2015-2022 x64 Redistributable from Microsoft's official website.
+
+Slint attribution and license information are in About and the accompanying
+NOTICES.txt and Slint-Royalty-Free-2.0.md files.

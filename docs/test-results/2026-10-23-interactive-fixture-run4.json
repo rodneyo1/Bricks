@@ -1,0 +1,383 @@
+{
+  "absolute_mouse_records_not_accumulated": 0,
+  "awaiting_marked_receipt_at_exit": false,
+  "boundary": "I0 immediately before SendInput to A0 handling marked WM_KEYDOWN",
+  "duration_ns": 18830780200,
+  "explicit_test_submissions": 49,
+  "feedback_policy": "defer status rendering untilreceipt, or 250 ms pending timeout",
+  "fixture_revision": "deferred-feedback-v1",
+  "focus_losses": 1,
+  "last_submit_to_api_return_ns": 448400,
+  "latency_sample_drops": 0,
+  "legacy_keyboard_receipts": 206,
+  "limitations": [
+    "Not capture-to-submit, two-PC, game acceptance, or input-to-photon",
+    "Basic WM_INPUT reader; buffered high-rate draining still pending",
+    "Aggregate capture only; no physical-key timestamps or typed text saved"
+  ],
+  "measurement_class": "local_interactive_fixture",
+  "mouse_button_records": 0,
+  "raw_keyboard_records": 108,
+  "raw_mouse_records": 0,
+  "raw_read_errors": 0,
+  "receipt_timing_samples": [
+    {
+      "api_return_to_keydown_receipt_ns": 1394900,
+      "submission_id": 1,
+      "submit_to_api_return_ns": 1684800,
+      "submit_to_keydown_receipt_ns": 3079700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 353300,
+      "submission_id": 2,
+      "submit_to_api_return_ns": 408100,
+      "submit_to_keydown_receipt_ns": 761400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 260500,
+      "submission_id": 3,
+      "submit_to_api_return_ns": 1058400,
+      "submit_to_keydown_receipt_ns": 1318900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 234600,
+      "submission_id": 4,
+      "submit_to_api_return_ns": 371300,
+      "submit_to_keydown_receipt_ns": 605900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 408100,
+      "submission_id": 5,
+      "submit_to_api_return_ns": 481600,
+      "submit_to_keydown_receipt_ns": 889700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 293200,
+      "submission_id": 6,
+      "submit_to_api_return_ns": 497800,
+      "submit_to_keydown_receipt_ns": 791000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 358600,
+      "submission_id": 7,
+      "submit_to_api_return_ns": 718500,
+      "submit_to_keydown_receipt_ns": 1077100
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 326600,
+      "submission_id": 8,
+      "submit_to_api_return_ns": 531300,
+      "submit_to_keydown_receipt_ns": 857900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 543200,
+      "submission_id": 9,
+      "submit_to_api_return_ns": 786800,
+      "submit_to_keydown_receipt_ns": 1330000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1534800,
+      "submission_id": 10,
+      "submit_to_api_return_ns": 1490500,
+      "submit_to_keydown_receipt_ns": 3025300
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1784200,
+      "submission_id": 11,
+      "submit_to_api_return_ns": 1704300,
+      "submit_to_keydown_receipt_ns": 3488500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1833800,
+      "submission_id": 12,
+      "submit_to_api_return_ns": 1660400,
+      "submit_to_keydown_receipt_ns": 3494200
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2259200,
+      "submission_id": 13,
+      "submit_to_api_return_ns": 1808500,
+      "submit_to_keydown_receipt_ns": 4067700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1639400,
+      "submission_id": 14,
+      "submit_to_api_return_ns": 1515600,
+      "submit_to_keydown_receipt_ns": 3155000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1340000,
+      "submission_id": 15,
+      "submit_to_api_return_ns": 1524800,
+      "submit_to_keydown_receipt_ns": 2864800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1360900,
+      "submission_id": 16,
+      "submit_to_api_return_ns": 1400500,
+      "submit_to_keydown_receipt_ns": 2761400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1706900,
+      "submission_id": 17,
+      "submit_to_api_return_ns": 2344900,
+      "submit_to_keydown_receipt_ns": 4051800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1613100,
+      "submission_id": 18,
+      "submit_to_api_return_ns": 1675500,
+      "submit_to_keydown_receipt_ns": 3288600
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 3326000,
+      "submission_id": 19,
+      "submit_to_api_return_ns": 1650600,
+      "submit_to_keydown_receipt_ns": 4976600
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1481500,
+      "submission_id": 20,
+      "submit_to_api_return_ns": 1481300,
+      "submit_to_keydown_receipt_ns": 2962800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2142000,
+      "submission_id": 21,
+      "submit_to_api_return_ns": 3270300,
+      "submit_to_keydown_receipt_ns": 5412300
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1757900,
+      "submission_id": 22,
+      "submit_to_api_return_ns": 2771500,
+      "submit_to_keydown_receipt_ns": 4529400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1053100,
+      "submission_id": 23,
+      "submit_to_api_return_ns": 4454400,
+      "submit_to_keydown_receipt_ns": 5507500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 381400,
+      "submission_id": 24,
+      "submit_to_api_return_ns": 463000,
+      "submit_to_keydown_receipt_ns": 844400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2396300,
+      "submission_id": 25,
+      "submit_to_api_return_ns": 3247600,
+      "submit_to_keydown_receipt_ns": 5643900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1337000,
+      "submission_id": 26,
+      "submit_to_api_return_ns": 1831000,
+      "submit_to_keydown_receipt_ns": 3168000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1335000,
+      "submission_id": 27,
+      "submit_to_api_return_ns": 3870700,
+      "submit_to_keydown_receipt_ns": 5205700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1377700,
+      "submission_id": 28,
+      "submit_to_api_return_ns": 1754400,
+      "submit_to_keydown_receipt_ns": 3132100
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 678500,
+      "submission_id": 29,
+      "submit_to_api_return_ns": 655400,
+      "submit_to_keydown_receipt_ns": 1333900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2631800,
+      "submission_id": 30,
+      "submit_to_api_return_ns": 1771900,
+      "submit_to_keydown_receipt_ns": 4403700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1421200,
+      "submission_id": 31,
+      "submit_to_api_return_ns": 1478600,
+      "submit_to_keydown_receipt_ns": 2899800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2419200,
+      "submission_id": 32,
+      "submit_to_api_return_ns": 2532900,
+      "submit_to_keydown_receipt_ns": 4952100
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1533700,
+      "submission_id": 33,
+      "submit_to_api_return_ns": 1425300,
+      "submit_to_keydown_receipt_ns": 2959000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1887300,
+      "submission_id": 34,
+      "submit_to_api_return_ns": 3112700,
+      "submit_to_keydown_receipt_ns": 5000000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2935100,
+      "submission_id": 35,
+      "submit_to_api_return_ns": 1600400,
+      "submit_to_keydown_receipt_ns": 4535500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 857400,
+      "submission_id": 36,
+      "submit_to_api_return_ns": 1199600,
+      "submit_to_keydown_receipt_ns": 2057000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1642700,
+      "submission_id": 37,
+      "submit_to_api_return_ns": 1641800,
+      "submit_to_keydown_receipt_ns": 3284500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1488000,
+      "submission_id": 38,
+      "submit_to_api_return_ns": 1507300,
+      "submit_to_keydown_receipt_ns": 2995300
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1756100,
+      "submission_id": 39,
+      "submit_to_api_return_ns": 3856100,
+      "submit_to_keydown_receipt_ns": 5612200
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1634600,
+      "submission_id": 40,
+      "submit_to_api_return_ns": 1632300,
+      "submit_to_keydown_receipt_ns": 3266900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1035600,
+      "submission_id": 41,
+      "submit_to_api_return_ns": 1327700,
+      "submit_to_keydown_receipt_ns": 2363300
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 918000,
+      "submission_id": 42,
+      "submit_to_api_return_ns": 1169700,
+      "submit_to_keydown_receipt_ns": 2087700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 329800,
+      "submission_id": 43,
+      "submit_to_api_return_ns": 369900,
+      "submit_to_keydown_receipt_ns": 699700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 332900,
+      "submission_id": 44,
+      "submit_to_api_return_ns": 400200,
+      "submit_to_keydown_receipt_ns": 733100
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 238900,
+      "submission_id": 45,
+      "submit_to_api_return_ns": 398700,
+      "submit_to_keydown_receipt_ns": 637600
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 305900,
+      "submission_id": 46,
+      "submit_to_api_return_ns": 408400,
+      "submit_to_keydown_receipt_ns": 714300
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 272800,
+      "submission_id": 47,
+      "submit_to_api_return_ns": 524000,
+      "submit_to_keydown_receipt_ns": 796800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 341000,
+      "submission_id": 48,
+      "submit_to_api_return_ns": 482400,
+      "submit_to_keydown_receipt_ns": 823400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 279200,
+      "submission_id": 49,
+      "submit_to_api_return_ns": 448400,
+      "submit_to_keydown_receipt_ns": 727600
+    }
+  ],
+  "relative_totals": [
+    0,
+    0
+  ],
+  "report_schema_version": 2,
+  "submission_or_cleanup_failures": 0,
+  "submit_to_keydown_receipt_ns": [
+    3079700,
+    761400,
+    1318900,
+    605900,
+    889700,
+    791000,
+    1077100,
+    857900,
+    1330000,
+    3025300,
+    3488500,
+    3494200,
+    4067700,
+    3155000,
+    2864800,
+    2761400,
+    4051800,
+    3288600,
+    4976600,
+    2962800,
+    5412300,
+    4529400,
+    5507500,
+    844400,
+    5643900,
+    3168000,
+    5205700,
+    3132100,
+    1333900,
+    4403700,
+    2899800,
+    4952100,
+    2959000,
+    5000000,
+    4535500,
+    2057000,
+    3284500,
+    2995300,
+    5612200,
+    3266900,
+    2363300,
+    2087700,
+    699700,
+    733100,
+    637600,
+    714300,
+    796800,
+    823400,
+    727600
+  ],
+  "uncertainty": "uncalibrated local Instant; scheduler/message-loop delays included",
+  "unresolved_possible_test_key_down": false,
+  "unsupported_keyboard_reasons": {
+    "scan_code_not_in_mapping_table": 4
+  },
+  "unsupported_keyboard_records": 4,
+  "vertical_wheel_units": 0
+}

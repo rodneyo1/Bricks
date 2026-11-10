@@ -1,0 +1,8 @@
+/target/
+/.tools/
+/artifacts/
+/dist/
+/Start Bricks.lnk
+/Bricks Diagnostics.lnk
+*.pdb
+

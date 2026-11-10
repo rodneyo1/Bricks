@@ -1,0 +1,265 @@
+{
+  "absolute_mouse_records_not_accumulated": 0,
+  "awaiting_marked_receipt_at_exit": false,
+  "boundary": "I0 immediately before SendInput to A0 handling marked WM_KEYDOWN",
+  "duration_ns": 47685739500,
+  "explicit_test_submissions": 32,
+  "feedback_policy": "defer status rendering until receipt, or 250 ms pending timeout",
+  "fixture_revision": "deferred-feedback-v1",
+  "focus_losses": 1,
+  "last_submit_to_api_return_ns": 1618300,
+  "latency_sample_drops": 0,
+  "legacy_keyboard_receipts": 320,
+  "limitations": [
+    "Not capture-to-submit, two-PC, game acceptance, or input-to-photon",
+    "Basic WM_INPUT reader; buffered high-rate draining still pending",
+    "Aggregate capture only; no physical-key timestamps or typed text saved"
+  ],
+  "measurement_class": "local_interactive_fixture",
+  "mouse_button_records": 14,
+  "raw_keyboard_records": 255,
+  "raw_mouse_records": 301,
+  "raw_read_errors": 0,
+  "receipt_timing_samples": [
+    {
+      "api_return_to_keydown_receipt_ns": 1898700,
+      "submission_id": 1,
+      "submit_to_api_return_ns": 2576100,
+      "submit_to_keydown_receipt_ns": 4474800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2031200,
+      "submission_id": 2,
+      "submit_to_api_return_ns": 1735700,
+      "submit_to_keydown_receipt_ns": 3766900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1740700,
+      "submission_id": 3,
+      "submit_to_api_return_ns": 1639100,
+      "submit_to_keydown_receipt_ns": 3379800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 842200,
+      "submission_id": 4,
+      "submit_to_api_return_ns": 950400,
+      "submit_to_keydown_receipt_ns": 1792600
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2035500,
+      "submission_id": 5,
+      "submit_to_api_return_ns": 1814200,
+      "submit_to_keydown_receipt_ns": 3849700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 3061300,
+      "submission_id": 6,
+      "submit_to_api_return_ns": 1686000,
+      "submit_to_keydown_receipt_ns": 4747300
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1683200,
+      "submission_id": 7,
+      "submit_to_api_return_ns": 2737600,
+      "submit_to_keydown_receipt_ns": 4420800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1773000,
+      "submission_id": 8,
+      "submit_to_api_return_ns": 1797000,
+      "submit_to_keydown_receipt_ns": 3570000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1719400,
+      "submission_id": 9,
+      "submit_to_api_return_ns": 1599100,
+      "submit_to_keydown_receipt_ns": 3318500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 2541500,
+      "submission_id": 10,
+      "submit_to_api_return_ns": 1575400,
+      "submit_to_keydown_receipt_ns": 4116900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1872500,
+      "submission_id": 11,
+      "submit_to_api_return_ns": 1907000,
+      "submit_to_keydown_receipt_ns": 3779500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 449400,
+      "submission_id": 12,
+      "submit_to_api_return_ns": 636700,
+      "submit_to_keydown_receipt_ns": 1086100
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 428100,
+      "submission_id": 13,
+      "submit_to_api_return_ns": 1619800,
+      "submit_to_keydown_receipt_ns": 2047900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1668800,
+      "submission_id": 14,
+      "submit_to_api_return_ns": 1731300,
+      "submit_to_keydown_receipt_ns": 3400100
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 379400,
+      "submission_id": 15,
+      "submit_to_api_return_ns": 880800,
+      "submit_to_keydown_receipt_ns": 1260200
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 808100,
+      "submission_id": 16,
+      "submit_to_api_return_ns": 1470600,
+      "submit_to_keydown_receipt_ns": 2278700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 927200,
+      "submission_id": 17,
+      "submit_to_api_return_ns": 1895300,
+      "submit_to_keydown_receipt_ns": 2822500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1044100,
+      "submission_id": 18,
+      "submit_to_api_return_ns": 1923900,
+      "submit_to_keydown_receipt_ns": 2968000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 225400,
+      "submission_id": 19,
+      "submit_to_api_return_ns": 829000,
+      "submit_to_keydown_receipt_ns": 1054400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 948900,
+      "submission_id": 20,
+      "submit_to_api_return_ns": 1624000,
+      "submit_to_keydown_receipt_ns": 2572900
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 534300,
+      "submission_id": 21,
+      "submit_to_api_return_ns": 1562400,
+      "submit_to_keydown_receipt_ns": 2096700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1661000,
+      "submission_id": 22,
+      "submit_to_api_return_ns": 1552000,
+      "submit_to_keydown_receipt_ns": 3213000
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1458300,
+      "submission_id": 23,
+      "submit_to_api_return_ns": 3169300,
+      "submit_to_keydown_receipt_ns": 4627600
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 847200,
+      "submission_id": 24,
+      "submit_to_api_return_ns": 904200,
+      "submit_to_keydown_receipt_ns": 1751400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1492700,
+      "submission_id": 25,
+      "submit_to_api_return_ns": 1819100,
+      "submit_to_keydown_receipt_ns": 3311800
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1524600,
+      "submission_id": 26,
+      "submit_to_api_return_ns": 1709900,
+      "submit_to_keydown_receipt_ns": 3234500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1509300,
+      "submission_id": 27,
+      "submit_to_api_return_ns": 1842200,
+      "submit_to_keydown_receipt_ns": 3351500
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1137500,
+      "submission_id": 28,
+      "submit_to_api_return_ns": 1597700,
+      "submit_to_keydown_receipt_ns": 2735200
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 986600,
+      "submission_id": 29,
+      "submit_to_api_return_ns": 964600,
+      "submit_to_keydown_receipt_ns": 1951200
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1617100,
+      "submission_id": 30,
+      "submit_to_api_return_ns": 1895600,
+      "submit_to_keydown_receipt_ns": 3512700
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1563100,
+      "submission_id": 31,
+      "submit_to_api_return_ns": 1935300,
+      "submit_to_keydown_receipt_ns": 3498400
+    },
+    {
+      "api_return_to_keydown_receipt_ns": 1575500,
+      "submission_id": 32,
+      "submit_to_api_return_ns": 1618300,
+      "submit_to_keydown_receipt_ns": 3193800
+    }
+  ],
+  "relative_totals": [
+    -569,
+    -773
+  ],
+  "report_schema_version": 2,
+  "submission_or_cleanup_failures": 0,
+  "submit_to_keydown_receipt_ns": [
+    4474800,
+    3766900,
+    3379800,
+    1792600,
+    3849700,
+    4747300,
+    4420800,
+    3570000,
+    3318500,
+    4116900,
+    3779500,
+    1086100,
+    2047900,
+    3400100,
+    1260200,
+    2278700,
+    2822500,
+    2968000,
+    1054400,
+    2572900,
+    2096700,
+    3213000,
+    4627600,
+    1751400,
+    3311800,
+    3234500,
+    3351500,
+    2735200,
+    1951200,
+    3512700,
+    3498400,
+    3193800
+  ],
+  "uncertainty": "uncalibrated local Instant; scheduler/message-loop delays included",
+  "unmapped_key_diagnostics_enabled": true,
+  "unresolved_possible_test_key_down": false,
+  "unsupported_code_drops": 0,
+  "unsupported_key_codes": [],
+  "unsupported_keyboard_reasons": {},
+  "unsupported_keyboard_records": 0,
+  "vertical_wheel_units": 0
+}

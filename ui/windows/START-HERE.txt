@@ -1,0 +1,32 @@
+BRICKS - WINDOWS PREVIEW
+
+Double-click Bricks.exe. No terminal or Rust installation is needed to run it.
+Requires 64-bit Windows 10/11, .NET Framework 4.8, and the Microsoft Visual C++
+v14 Redistributable (x64) used by the Rust tools. Those runtimes are already
+available on the development PC. If another PC reports a missing Windows library,
+get the x64 runtime from Microsoft:
+https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+
+TODAY, ON ONE PC
+1. Click Run automatic checks. Both checks should show PASS.
+2. Click Open test under Keyboard & mouse.
+3. In the input window, click Run test (no Fn/F8 needed).
+4. Close the input window to see its result in Bricks.
+
+WHEN YOUR OTHER PC IS AVAILABLE
+Copy this ENTIRE Bricks folder to it, including bin and Bricks.exe.config.
+On each PC open Connection, choose Host or Client, and click Set up this device.
+Save each PC's public identity file and copy it to the other PC.
+Load the other PC's identity. Compare all four fingerprint lines with the other
+PC's screen before approving. Do this on BOTH PCs.
+On the host choose its LAN/tunnel address and click Start host test.
+On the client enter that address and click Connect & run test within 30 seconds.
+Keep the same port on both PCs. Allow the application only on the intended private
+network if Windows asks. No router changes are needed when an IP route exists.
+
+The development connection test sends synthetic events only. It does not control
+the desktop or stream video. The automatic checks are diagnostics, not proof of
+gaming latency. Short-code pairing, discovery and a signed installer are pending.
+
+Export last report saves the most recent result. Private identity keys are never
+exported. The UI does not change firewall rules or install/start network services.

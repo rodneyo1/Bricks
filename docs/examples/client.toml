@@ -1,0 +1,33 @@
+# Development configuration; recording-only QUIC probe supported, OS control pending.
+schema_version = 1
+role = "client"
+profile = "gaming"
+
+[transport]
+backend = "quic"
+peer = "127.0.0.1:47990"
+max_datagram_bytes = 1200
+
+[security]
+identity_ref = "os-store:bricks-client"
+require_paired_peer = true
+
+[input.capture]
+backend = "windows_raw_input"
+escape_chord = "Ctrl+Alt+Shift+F12"
+
+[recovery]
+snapshot_interval_ms = 20
+silence_timeout_ms = 250
+send_history_capacity = 256
+receive_buffer_capacity = 64
+retry_min_ms = 2
+retry_max_ms = 20
+deadline_min_ms = 30
+deadline_max_ms = 150
+
+[diagnostics]
+event_trace = false
+
+[profiles.gaming.forwarding]
+motion_aggregation_us = 0

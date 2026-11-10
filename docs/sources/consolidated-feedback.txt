@@ -1,0 +1,161 @@
+Venice
+
+Codex's rebuttal is strong and mostly correct. It's also doing something important: it's holding me to a higher bar than "the attachment said so." Let me adjudicate each point honestly, including where Codex is right and where it's still slightly off.
+
+Where Codex is right
+Point 2 — QUIC datagrams. This is the strongest correction. Codex is correct that QUIC datagrams (RFC 9221) are unreliable and unordered by design — they don't inherit reliable-stream head-of-line blocking. My "QUIC is wrong" was based on a lazy assumption that QUIC = reliable streams. With datagrams it doesn't. Codex also correctly notes that raw UDP alone gives you no auth, no replay protection, and no congestion control — you'd bolt those on manually, and "NACK + seq" is not the same as a security model. Verdict: Codex wins this point. Keep QUIC datagrams as the authenticated baseline; build a small raw-UDP reference backend to measure the overhead honestly. That's a better plan than mine.
+
+Point 3 — Raw Input vs. low-level hooks. Codex is right that RAWKEYBOARD carries explicit make/break flags and scancodes, so press/release pairing is supported. And the WH_KEYBOARD_LL silent-removal-after-timeout failure mode is real and nasty — a stuck keyboard mid-session is exactly the kind of failure the plan is trying to avoid. Verdict: Codex wins on the default. Raw Input as default capture, hooks only for suppression, both backends testable. Good.
+
+Point 6 — uncertainty budget. Codex's refinement — "scheduler jitter belongs in the measured distribution, not subtracted as error" — is more correct than my framing. Scheduler wake jitter is part of the latency the application sees. Subtracting it would be lying. Verdict: Codex is more right than I was.
+
+Point 5 — the hybrid criticism. Codex is right and I was sloppy. You can measure physical input-to-photon before Bricks has video by holding Sunshine/Moonlight's video path constant and swapping only the input layer. That's a legitimate hybrid experiment. My "can't compare until video exists" was overstated. Verdict: Codex wins.
+
+Where Codex is still slightly off
+Point 1 — the target reconciliation. Codex says the benchmark doc already defines p95 ≤ 3 / p99 ≤ 5 as two-PC wired-LAN capture-to-submit goals, and that I was comparing against a preserved older doc. Fair — if that's what the current doc says, then the numbers aren't contradictory, they're scoped. But one thing remains true: a "capture-to-submit" target is not the same measurement as "capture-to-injection." "Submit" implies it includes the app-level handoff. Make sure the doc states the exact boundary (capture → inject? capture → app receipt? capture → submit?) because those differ by several ms and someone will benchmark the wrong one. This is a labeling precision issue, not a numbers issue.
+
+Point 3 — the re-timing model. Codex says "the attachment refers to a re-timing model that we already rejected." This is the most interesting claim and it's the one you should pin down. If re-timing was rejected, what replaced it? Because the original problem — host-observed inter-event deltas reflecting network jitter instead of human motor noise — doesn't go away just because you rejected the sampler. Options: (a) inject on arrival and accept jitter, (b) inject with a fixed lead, (c) some other model. Ask Codex to state the replacement explicitly, or you'll end up with an input agent that has no timing story at all. This is the real open question.
+
+Point 4 — authentication can't be deferred. Codex is right, and it's a good catch. I lumped "pairing UX" and "authentication" together; they're separable. Auth must exist from M1; only the convenient pairing screens get deferred.
+
+The honest scorecard
+My correction	Codex verdict	Who's right
+Label benchmarks	Agreed + says doc already scopes it	Both — add boundary precision
+QUIC is wrong	Datagrams, not streams	Codex
+Keyboard needs hooks	Raw Input supports pairing	Codex (hooks for suppression only)
+Defer UI	Agreed, but keep auth	Codex on auth
+Gate media	Can do hybrid test	Codex
+Uncertainty budget	Jitter is signal not error	Codex
+So: Codex largely won the technical exchange. My corrections were directionally right on discipline (labeling, gating, deferring polish) and wrong on the two specific technical claims. That's a fine outcome — the plan is better for having been challenged.
+
+What to actually green-light
+Codex's own amendment is good and you should adopt it, with three additions:
+
+Adopt Codex's amendment verbatim: measurement classes, early UDP reference, retained Raw Input default, performance-before-installer, explicit media gate.
+Add: state the re-timing replacement. Codex says the model was rejected — make it write down what the timing story is now. Without this, the input path has no defined behavior for inter-event deltas.
+Add: define the measurement boundary precisely. "Capture-to-submit" vs "capture-to-injection" vs "capture-to-photon." Every target must name its start and end point. This is the one thing that will still cause confusion.
+Add: auth is M1, not M5. Fold Codex's own point into the milestone list so it can't drift.
+Verdict
+Green light, using Codex's amendment, plus the four additions above. Codex corrected two of my technical claims correctly and improved two others. The plan is now disciplined, honest about measurement classes, and has a real early-UDP-vs-QUIC experiment instead of a dogmatic choice. The only genuinely unresolved item is the re-timing story — pin that down before code starts, because "how do inter-event deltas behave on the host" is the core behavior of the whole product.
+
+Want me to write the final amended milestone list incorporating Codex's amendment plus those four additions, so both of you are working from one document?
+
+yes
+
+Venice
+
+Here's the consolidated document. Codex's amendment is adopted verbatim where it stands on its own; my four additions are folded in as explicit milestone items so they can't drift.
+
+Bricks — Amended Plan (Consolidated)
+Adopted amendment (Codex): clear measurement classes, an early UDP reference, retained Raw Input default, performance before installer polish, and an explicit media gate.
+
+Four additions folded in: (A) re-timing story must be stated, (B) measurement boundaries must be explicit, (C) auth lands in M1, (D) target numbers scoped per measurement class.
+
+Ground Rules
+Every result carries a measurement class. No unlabeled number is a valid result.
+Correctness before latency. Recovery and correctness pass before any latency tuning.
+Auth exists from M1. Convenient pairing UX is deferred; authentication is not.
+No media work until input is proven. M6+ only, gated on M1–M5.
+Uncertainty is reported, not subtracted. Scheduler jitter is signal; clock/drift/resolution are error.
+Measurement Classes (Addition B)
+Every benchmark names its start and end point:
+
+Class	Boundary
+Local	capture → inject, same machine
+Loopback	capture → inject, network stack, same machine
+Two-PC LAN	capture on A → inject on B, wired
+Tunnel	capture on A → inject on B, via tunnel
+Hybrid physical	input event → photon, video path held constant
+Full-stack physical	input event → photon, Bricks video (M6+)
+Every target below is stated per class. "Capture-to-submit" is defined as capture → application receipt; "capture-to-injection" is capture → OS inject call. These are different and must not be conflated.
+
+Targets (Addition D)
+Metric	Local	Two-PC LAN	Tunnel
+E2E mean	≤ 2 ms	≤ 8 ms	≤ RTT + 8 ms
+E2E p95	≤ 3 ms	≤ 12 ms	measured, ≤ RTT + 20 ms
+E2E p99	≤ 5 ms	≤ 20 ms	measured, ≤ RTT + 40 ms
+Jitter std-dev	≤ 0.5 ms	≤ 2 ms	≤ 5 ms
+Hold-delta mean (host vs client)	≤ 1 ms	≤ 2 ms	≤ 3 ms
+Hold-delta std ratio	0.9–1.1	0.85–1.2	0.8–1.3
+Tunnel targets stay measured, not asserted — they depend on the link.
+
+Milestones
+M0 — Workspace and configuration
+Rust workspace: protocol, config, transport, input-windows, client, host, bench.
+Versioned TOML profiles. Capability-based backend selection.
+No UI. Two binaries + config file.
+M1 — Local input correctness + auth
+Windows Raw Input capture (default), hooks for suppression only, both backends testable.
+Normalized physical events with explicit make/break.
+Checked SendInput injection (scancodes, discrete down/up).
+Receiver fixture records what applications actually receive.
+Verify: modifiers, extended keys, mouse move, clicks, wheel, repeat, escape/disconnect cleanup.
+Addition C: authenticated channel lands here (token or PSK), not M5.
+M2 — Two-PC connection
+QUIC datagrams as authenticated baseline (RFC 9221, unreliable/unordered).
+Raw UDP reference backend built alongside for honest overhead measurement.
+Explicit host addresses. Immediate forwarding. Bounded queues. Async instrumentation.
+LAN baseline established before any tuning.
+Must work unchanged through Tailscale/WireGuard.
+M3 — Failure behavior
+Transition acknowledgments, dedup, retries, motion barriers, state snapshots, reconnect epochs.
+Test: lost releases, reordered packets, disconnects, focus loss, process crash, queue overflow.
+Addition A: state and implement the inter-event timing behavior (see below).
+M3a — Timing story (Addition A) — must be resolved before M4
+The previously rejected re-timing sampler is replaced by an explicit, documented behavior. Choose and justify one:
+
+(i) Inject on arrival — simplest; host deltas reflect network jitter.
+(ii) Fixed lead — inject with a constant offset; shifts but does not shape deltas.
+(iii) Sampled re-timing — keyup scheduled at arrival + sampled_hold; shapes deltas to match local.
+Whichever is chosen, M4 measures it. No choice = no defined behavior.
+
+M4 — Transport bake-off
+Compare QUIC-datagram vs raw-UDP reference on equal terms: same auth, same delivery guarantees, same recovery.
+Measure: overhead, E2E distribution, CPU, bandwidth, recovery time.
+Pick the winner on evidence, not preference.
+M5 — Install and connect
+Shared Share/Connect application, installer, discovery, reviewed pairing, saved hosts, actionable errors.
+Test first-time setup on clean Windows profiles.
+Deferred, not removed.
+M6 — Hybrid physical measurement (Addition B)
+Compare Sunshine/Moonlight input vs Bricks input with identical video path.
+Photodiode rig or calibrated high-speed camera. Software timestamps alone are insufficient.
+Result is labeled hybrid, not full-stack victory.
+M7+ — Bricks media
+Only after M1–M6 pass. Video/audio built last.
+Test Layers
+Layer	Establishes
+Simulated clock/network	Ordering, recovery, bounds, session behavior under repeatable failures
+Real Windows capture/injection fixture	Actual OS behavior and software latency
+Two-PC physical	What is experienced: network, video, display
+Benchmark Sequence
+Local and wired-LAN baselines.
+1 kHz mouse; then characterize 4/8 kHz.
+Repeat under CPU/GPU load.
+Controlled delay, loss, duplication, reordering, outages.
+Direct and tunnel routes separately.
+Alternating Bricks/baseline runs with identical hardware, resolution, refresh, codec, quality, presentation.
+Reporting
+Per run: p50/p95/p99, paired hold-time error, missing events, recovery time, stuck-state failures, CPU, memory, bandwidth, and an uncertainty budget (clock offset, drift, timestamp boundaries, instrument resolution, statistical confidence).
+
+Every run saves its resolved configuration and build/hardware manifest. Every number is labeled with its measurement class.
+
+Regression Gates (LAN)
+Gate	Threshold
+E2E mean	≤ 8 ms
+E2E p99	≤ 20 ms
+Hold-delta mean	≤ 2 ms
+Hold-delta std ratio	0.9–1.1
+Dropped events	exact zero
+Reordered injections	exact zero
+A change regressing any gate > 20% needs written justification.
+
+What Requires the Second Machine / Equipment
+Two-PC LAN and tunnel results.
+Hybrid and full-stack physical latency.
+Game-compatibility results.
+Local/loopback results are always labeled as such and never presented as physical.
+
+Two things worth deciding before you paste this back: who owns the M3a timing decision (it blocks M4 and is the one genuinely open design question), and whether M4's bake-off is allowed to overturn the QUIC baseline if raw UDP measures better — Codex said "unless measurements justify changing it," so confirm that's a real switch and not a formality.
+
+Want me to write the M3a decision as a short one-page tradeoff memo (options i/ii/iii, measurement implications of each) so the timing question gets resolved on paper rather than by default?

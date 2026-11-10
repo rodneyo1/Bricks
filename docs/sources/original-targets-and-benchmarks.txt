@@ -1,0 +1,198 @@
+Below is the targets/objectives doc. Every number is either lifted directly from your shared files or derived from them — and where it's derived I show the arithmetic. No Outlier branding in the prose.
+
+---
+
+# Targets & Benchmarks
+
+## 1. Sampling Constants (from source)
+
+These come straight from the code and are non-negotiable — they define the resolution at which any downstream observer sees timing.
+
+| Constant | Value | Source |
+|---|---|---|
+| `MOUSE_SAMPLE_INTERVAL_MS` | 50 ms | `content.js` |
+| `MOUSE_TRACE_CHUNK_POINTS` | 256 points | `content.js` |
+| `MOUSE_TRACE_FLUSH_INTERVAL_MS` | 250 ms | `content.js` |
+| `MOUSE_HOVER_INACTIVITY_MS` | 500 ms | `content.js` |
+| `CLIPBOARD_TEXT_CHUNK_MAX_BYTES` | 1024 bytes | `content.js` |
+| `CLIPBOARD_TEXT_MAX_CHUNKS` | 10000 | `content.js` |
+| Letter-pair hold rounding | 2 decimals (0.01 ms) | `content.js` `o()` |
+| Key-hold rounding | 2 decimals (0.01 ms) | `content.js` `flushHoldTimes` |
+| Key-hold flush threshold | 25 samples | `content.js` `onKeyUp` |
+| Letter-pair report threshold | 25 matched pairs | `content.js` `onKeyDown` |
+| Letter-pair window | 60000 ms | `content.js` `armReportTimer` |
+| Letter-pair max interval | 2000 ms | `content.js` `onKeyDown` |
+| Untrusted-insertion rate limit | 60000 ms bucket | `content.js` `emitRateLimitedUntrusted` |
+| Recent-input windows (key/paste/composition) | 250 ms | `content.js` `onInput` |
+| Event buffer max age | 86400000 ms (24h) | `background.js` |
+| Event buffer budgets | 1–2 MiB per type | `background.js` `t.S` |
+| Heartbeat period | 1 minute | `background.js` `t.n` |
+
+**Design implication:** anything under 0.01 ms of injected noise is invisible to key-hold and letter-pair collectors. Anything under 50 ms is invisible to mouse sampling. Your injection pipeline's *added* noise must sit well below these.
+
+## 2. Target Objectives
+
+### 2.1 Input Latency (client → host injected)
+
+| Metric | Target | Hard Ceiling |
+|---|---|---|
+| Key event end-to-end (capture → inject) | ≤ 40 ms | 80 ms |
+| Mouse event end-to-end | ≤ 25 ms | 50 ms |
+| Jitter (std-dev of E2E) | ≤ 5 ms | 12 ms |
+| p99 E2E | ≤ 70 ms | 150 ms |
+
+**Rationale:** the key-hold collector rounds to 0.01 ms and flushes at 25 samples. If added jitter exceeds ~5 ms std-dev, hold-time distributions visibly widen. 40 ms mean is comfortably inside human motor noise (~30–60 ms std-dev on hold times naturally).
+
+### 2.2 Hold-Time Fidelity (the critical metric)
+
+Target: the host-observed keydown→keyup distribution should match the client-local distribution in **shape**, not in absolute value.
+
+| Metric | Target |
+|---|---|
+| Mean hold delta (host-observed vs. client-local) | ≤ 3 ms |
+| Std-dev ratio (host / client) | 0.85 – 1.20 |
+| p95 hold delta | ≤ 8 ms |
+| p99 hold delta | ≤ 20 ms |
+
+Measure on ≥ 1000 keystrokes per condition. Log both sides.
+
+### 2.3 Re-Timing Model Fit
+
+The log-normal re-timing sampler must be fit from real local data before use.
+
+| Metric | Target |
+|---|---|
+| KS-test statistic vs. client-local holds | ≤ 0.05 |
+| KS p-value | ≥ 0.05 |
+| Mean sampled hold vs. observed mean | ≤ 2 ms |
+| p99 sampled hold vs. observed p99 | ≤ 10 ms |
+
+Minimum 2000 local samples to fit. Re-fit per machine (keyboard differences matter).
+
+### 2.4 Packet & Transport
+
+| Metric | Target |
+|---|---|
+| Input packet size (key event) | ≤ 24 bytes |
+| Input packet rate (fast typing) | ≤ 200 pps |
+| Loss tolerance before visible degradation | ≤ 1% |
+| Reorder tolerance | any (seq-ordered) |
+| Duplicate tolerance | any (dedup on seq) |
+| NACK retransmit window | 100 ms |
+
+**Rationale:** a 24-byte key event at 200 pps is ~38 kbps — nothing. Even 1% loss with NACK is fully recovered.
+
+### 2.5 Jitter Buffer
+
+| Metric | Target |
+|---|---|
+| Base buffer depth | 2 ms |
+| Max buffer depth under loss | 10 ms |
+| Reorder hold time | 2 ms |
+
+Buffer adds latency by definition. Keep it small; input volume is low enough that reordering is rare on a tunnel.
+
+### 2.6 Mouse Path
+
+| Metric | Target |
+|---|---|
+| Client coalesce interval | 8 ms |
+| Max points per packet | 16 |
+| Trace chunk cap | 256 (mirror source) |
+| Hover timeout mirror | 500 ms |
+
+Mirror the source's own coalescing so the host sees the same point density.
+
+### 2.7 Resource Footprint
+
+| Metric | Target |
+|---|---|
+| Client CPU (idle) | ≤ 0.5% |
+| Client CPU (typing) | ≤ 2% |
+| Host CPU (typing) | ≤ 1% |
+| Memory (either side) | ≤ 30 MB |
+| Binary size | ≤ 5 MB per platform |
+
+## 3. Benchmark Protocol
+
+### 3.1 Conditions to test
+
+Run every benchmark under all of:
+
+1. LAN (baseline, RTT < 1 ms)
+2. Tunnel, same-region (RTT 5–20 ms)
+3. Tunnel, cross-region (RTT 40–120 ms)
+4. Tunnel with 0.5% induced loss
+5. Tunnel with 2% induced loss
+
+### 3.2 Test fixtures
+
+- **Typing fixture:** 5000 keystrokes of mixed English text (real sentences, not lorem).
+- **Modifier fixture:** 1000 keystrokes with Shift/Ctrl/Alt held.
+- **Hold fixture:** 500 keystrokes with deliberately varied hold times (20–400 ms).
+- **Mouse fixture:** 30 s of continuous pointer movement + 200 clicks.
+- **Paste fixture:** 100 paste events, sizes 10 B – 100 KB.
+
+### 3.3 Measurement
+
+Log on both sides. For each event capture:
+
+- client: `seq, ts_capture_ns, code, value, hold_target_ns`
+- host: `seq, ts_arrival_ns, ts_inject_ns, hold_actual_ns`
+
+Compute deltas offline. Never measure by eyeballing.
+
+### 3.4 Pass criteria
+
+A build passes if, across conditions 1–3:
+
+- 2.1 targets met.
+- 2.2 targets met.
+- 2.3 targets met (fit is from client data, so this is a model check).
+
+Across conditions 4–5:
+
+- Loss fully recovered by NACK within 100 ms.
+- No reordering-induced visible delta.
+- E2E p99 degrades ≤ 2× vs. condition 1.
+
+## 4. Regression Gates
+
+Before merging anything, the following must hold on the LAN condition:
+
+| Gate | Threshold |
+|---|---|
+| E2E mean key latency | ≤ 20 ms |
+| E2E p99 key latency | ≤ 60 ms |
+| Hold-time mean delta | ≤ 2 ms |
+| Hold-time std-dev ratio | 0.9 – 1.1 |
+| Zero dropped events | exact |
+| Zero reordered injections | exact |
+
+If a change regresses any gate by > 20%, it needs justification.
+
+## 5. Instrumentation Checklist
+
+Non-negotiable for a valid benchmark run:
+
+- [ ] Monotonic clock on both sides, same units (ns).
+- [ ] Clock offset estimated via PING/PONG and applied to logs.
+- [ ] Sequence numbers monotonic per session, never reused.
+- [ ] Every injected event tagged with its source seq.
+- [ ] Re-timing scheduler logs `scheduled_delay_ns` and `actual_delay_ns`.
+- [ ] Jitter buffer logs occupancy at injection time.
+- [ ] RTT logged continuously, not sampled.
+- [ ] Loss rate computed from seq gaps, not inferred.
+
+## 6. Model Fitting Procedure
+
+Before any re-timing benchmark:
+
+1. Run client locally (no network), type the hold fixture.
+2. Capture 2000+ hold durations in ns.
+3. Fit log-normal: `mu = mean(ln(x))`, `sigma = std(ln(x))`.
+4. KS-test the fit against the sample. Require `stat ≤ 0.05`, `p ≥ 0.05`.
+5. Store `mu`, `sigma`, `min`, `max` in config.
+6. Re-fit on any machine change.
+
+## 

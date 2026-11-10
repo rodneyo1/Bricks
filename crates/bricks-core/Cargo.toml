@@ -1,0 +1,13 @@
+[package]
+name = "bricks-core"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+bricks-protocol.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
+

@@ -1,0 +1,11 @@
+Bricks desktop uses Slint 1.18.1 under the Slint Royalty-free Desktop, Mobile,
+and Web Applications License, version 2.0. Its About screen includes the
+unmodified AboutSlint widget required by section 2(a). The license text is
+distributed alongside this application as Slint-Royalty-Free-2.0.md.
+
+Slint: Copyright SixtyFPS GmbH and contributors. https://slint.dev
+
+This is a local development bundle. Cargo.lock records the exact transitive
+dependency versions. Complete third-party notice collection, dependency/security
+review, signing and installer validation remain release requirements before
+public distribution. The Slint license does not license Bricks source code.

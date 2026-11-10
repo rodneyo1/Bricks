@@ -1,0 +1,52 @@
+# Windows live input, v1
+
+Scope: authenticated keyboard and relative-mouse forwarding, cumulative motion barriers, explicit start/stop, foreground loss, revocation, bounded recovery and process-crash cleanup. Latency is the priority. This version has no media, discovery, custom NAT traversal, automatic session resume, clipboard or remote application management. The original [targets](targets-and-benchmarks.md) remain unchanged.
+
+## Use the desktop app
+
+1. On both PCs, open **Start Bricks**, choose **Share this PC**, and click **Set up this PC**. The identity details show the public certificates and SHA-256 fingerprints; **Settings > Advanced > Open data folder** opens their location. Public certificates are in `public`.
+2. Copy the host's `bricks-host.der` to the client, and the client's `bricks-client.der` to the host. These files are public. Keep `identity.json` and private-key storage on their original PC.
+3. In **Settings > Advanced**, browse to the copied certificate and paste the fingerprint shown by the other PC. On the host, check **Allow this client to control this PC** for the client's certificate. On the client, leave it unchecked for the host certificate. Click **Trust verified peer** only after comparing the fingerprint. A single trusted peer fills the corresponding connection field automatically.
+4. On the host, choose **Share this PC**, check the client fingerprint/listen IP, and click **Start sharing**. The settings port is displayed. Select the host application you intend to control before sending the first input.
+5. On the client, save/select the host's reachable numeric LAN or tunnel IP and matching port, then **Connect**. In the visible capture window, click **Start forwarding** or press F8. Physical keys already held before starting are not assumed owned. Keyboard mappings, relative physical mice, five mouse buttons and both wheels are the supported subset.
+6. **Stop input**, close the capture window, switch away from it, or press **Ctrl+Alt+Shift+F12** to end the session. The same chord also stops the host. Reconnect explicitly for a new epoch. The host binds focus on its first submitted input; changing its foreground window ends sharing.
+
+LAN, Tailscale and WireGuard use the same authenticated IP transport. The configured bind address must match the intended IPv4/IPv6 interface family, and the selected port must be reachable through Windows/network firewall rules. There is no tunnel-service API dependency or NAT traversal in Bricks. Normal use requires neither Cargo nor TOML editing. Multiple trusted peers can be selected by their full fingerprint; automatic association of certificates with saved computers is deferred.
+
+The existing Slint frontend owns session controls and status. A separate visible native capture window is used for the foreground Raw Input message pump. It has no video presentation in v1. Local system shortcuts are not globally suppressed, and v1 does not lock the cursor. A switch away from the capture window ends input. Absolute tablets/touch devices, virtual/RDP input and full high-rate buffered device draining are not qualified by this implementation.
+
+## Runtime and latency
+
+The agent starts a dedicated host or client mode of the bundled `bricks-agent.exe`. The product UI and control SDK carry session/configuration requests and status only. Captured input goes directly from the Raw Input callback through a bounded in-memory queue to the input worker and encrypted QUIC datagrams. There is no per-input JSON, UI roundtrip, disk write or watchdog pipe roundtrip.
+
+Two QUIC I/O workers service spawned network tasks separately from the root input actor. The root future remains on the calling thread, preserving scoped MMCSS registration. `execution.io_workers` supports 0/1/2 for declared comparisons; `execution.games_scheduling` controls the root actor's Games task. Defaults are 2/true. Active sessions scope their timer-resolution/process policy and sleep requests to their lifetimes. Idle agents make no active-input timer request. Capture redraws show session events; counters do not redraw continuously while forwarding.
+
+Healthy input is sent and submitted immediately. The default motion aggregation remains zero. Cumulative motion/wheel totals reset at each critical transition. Each critical packet carries the preceding segment's final totals. A lost motion sample can therefore be repaired before its click/key boundary without waiting for that sample or replaying it after the boundary. Future segments wait for their critical dependencies; old segments and old epochs cannot alter current input. Repeated physical downs and multi-device releases are normalized by device ownership before transport.
+
+Critical history retains exact transitions and barriers until cumulative application feedback. The existing 256-entry history, 64-entry reorder window, bounded retries, 30–150 ms recovery policy and 250 ms authenticated-silence timeout remain in force. The selected policy is granted after completed mutual authentication and explicit approval. Old capture records exceeding the recovery cutoff stop the session rather than replaying stale actions. Lost critical history or a full queue ends the epoch; it never silently becomes a state-only delivery success.
+
+The v1 live grant uses `BRKLIV01`, distinct from the recording diagnostic grant. Critical envelopes are 88 bytes; motion/heartbeat envelopes are 80 bytes. They use fixed explicit little-endian fields, not Rust layout. Public codecs have malformed-length/reserved-field tests. These larger motion envelopes have a different bandwidth scope from the older 48-byte synthetic-key reference; measure them separately.
+
+## Ownership and cleanup
+
+The host tracks only remote-owned state. A key/button already down on the host is rejected before publishing ownership or submitting a down; cleanup does not release that pre-existing hold. Local physical input overlapping a remote session is not an independent merged input owner in v1. SendInput compatibility, privilege restrictions and behavior in each game require validation.
+
+Before a possible down, the injecting process publishes the key/button in a bounded shared atomic journal. Successful releases clear their entries. An independently running watchdog holds the mapping and an exclusive owner-lock handle duplicated by the parent over private startup pipes. No named shared-memory object or PID-only authority is used. The owner lock is common to live host workers under the Windows account, independent of port or peer identity, and remains held through watchdog cleanup after a parent crash.
+
+The actor pulses the watchdog while healthy. Process death, a missing heartbeat, host focus loss or the host escape chord fences the old injecting process before watchdog release. A resumed actor cannot renew an expired heartbeat. If the watchdog dies, the surviving host stops and attempts its own releases. Simultaneous loss of both processes and OS failure remain outside this mechanism.
+
+Release failure remains visible and owned. A surviving watchdog retries failed releases while retaining the journal and owner lock; it does not claim neutral state from an empty restarted process. Secure-desktop/privilege restrictions can prevent SendInput and invalidate a scheduling-bound cleanup claim. Report unresolved ownership and failures. “API confirmed” in the UI means checked submission/ownership results, not proof that every game consumed the releases.
+
+The UI connection owns its persistent operation. Closing it, aborting its IPC task or losing the agent closes the worker's owner pipe and requests stop. Agent restart does not replay a session. Persistent SDK sessions have no diagnostic 60-second deadline. Closing a UI with an active operation requests cancellation and waits for its result. There is at most one live host/client operation per product agent.
+
+Peer trust refresh happens on a separate control thread. Out-of-process revocation invalidates admission while the input loop remains free of trust-file reads. Pending handshakes and incoming buffers are bounded. Invalid handshakes do not end the sharing listener; repeated rejection logging is bounded. The local SDK remains restricted to the current Windows user and interactive session; its wire version is 2 for live-session commands and status.
+
+## Verification and limits
+
+`bricks-host verify-live-cleanup FRESH_OUTPUT_DIRECTORY` is an explicit visible Windows test. It uses synthetic known-key/button holds through real pinned QUIC, observes marked application messages and Windows held-state results from a separate process, and affects only its own workers. It is not run by normal startup or Cargo tests. Unit/transport tests use recording injectors; they never submit OS input.
+
+`bricks-lab process-bench HOST_EXE CLIENT_EXE FRESH_OUTPUT_DIRECTORY 60` runs separate recording-only processes with nominal 1 kHz motion plus clicks/keys, reports each process's CPU and resource history, and checks final motion totals and critical acknowledgements. It does not prove physical capture/injection CPU or cross-PC latency. Resource histories retain at most 600 periodic samples; the live data path remains bounded independently of session duration.
+
+Two-PC LAN/tunnel capture-to-submit timing, physical Raw Input acceptance across the published key/device matrix, game/anti-cheat compatibility, physical input-to-photon measurement and the matched-quality Sunshine/Moonlight comparison remain open. A passed marked Windows fixture is not a game acceptance result. No media work is authorized by this v1 implementation alone; the roadmap's hardware and hybrid measurement gates remain in place.
+
+Primary implementation references: [Raw Input](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getrawinputdata), [SendInput and UIPI](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput), [handle duplication](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle), [mapped views](https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-mapviewoffile), [held-state observations](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getasynckeystate), [process termination](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess), and [Tokio runtime behavior](https://docs.rs/tokio/latest/tokio/runtime/).

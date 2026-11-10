@@ -1,0 +1,116 @@
+## Language choice
+
+For this specific project — a latency-critical input agent with platform-specific low-level hooks — the honest answer is **Rust**, and it isn't close.
+
+**Why Rust:**
+
+1. **You're writing latency-critical code with no GC pauses.** The whole point is deterministic sub-millisecond injection timing. A garbage collector — even a good one — introduces occasional multi-ms pauses. Rust gives you no runtime, no GC, and predictable memory behavior. For a project whose *entire value proposition* is timing fidelity, this is the deciding factor.
+2. **Zero-cost FFI to the platform APIs you actually need.** `uinput`/`evdev` on Linux, `SendInput` on Windows, `CGEventPost` on macOS. Rust binds to all of these cleanly with `libc`/`windows`/`core-foundation` crates. Go's cgo is workable but clunkier; C#/.NET can't touch `uinput` without P/Invoke gymnastics.
+3. **Single static binary per platform.** Matches your ≤5 MB footprint target. Go also does this, but Go's GC and less-precise platform control lose on the timing axis.
+4. **`tokio` for the UDP transport.** Mature async runtime, `tokio::net::UdpSocket`, easy NACK/seq handling. You get the async ergonomics without giving up determinism on the hot path (you can run the injector on a dedicated thread with `SCHED_FIFO`-style priority).
+5. **Ecosystem is real now.** `cargo`, `crates.io`, `serde`, `toml`, `tracing`, `anyhow`/`thiserror`. The "Rust is hard, ecosystem is immature" complaint is ~5 years out of date.^1^
+6. **Rust is explicitly positioned for performance-critical systems.**^2^ ^1^ Your project is textbook that.
+
+**Why not the alternatives:**
+
+- **C++** — same performance, worse ergonomics and memory safety. You'd fight build systems and UB. Only wins if you already know it cold.
+- **Go** — great for the transport and tooling, but the GC pause tail hurts the exact thing you're optimizing, and cgo for `uinput` is awkward. Also fine, just second place.
+- **C#/.NET** — genuinely strong, huge Microsoft ecosystem, great Windows integration.^3^ ^4^ ^5^ But `uinput`/`evdev` on Linux is P/Invoke-heavy, and you inherit a runtime. Good if you're Windows-only and want dev speed.
+- **Python** — too slow on the hot path without dropping to C, and you'd end up writing C anyway.
+- **Zig** — interesting, but smaller ecosystem and you'd be an early adopter on the exact libraries you need.
+
+**The one split worth considering:** if you want to prototype the re-timing model and fit distributions *fast*, write that in Python offline (the fitting/analysis is not on the hot path), then port the final model to Rust. Keep the hot path Rust-only.
+
+## Tools you'll need
+
+Grouped by role. Rust crates unless noted.
+
+**Platform input (the core):**
+
+- `evdev` — Linux capture and write-back.
+- `uinput` — Linux virtual HID device creation.
+- `windows` crate — `SendInput`, low-level hooks (`SetWindowsHookEx`), scancode handling.
+- `core-foundation` + `core-graphics` — macOS `CGEventPost` (v2).
+- `libc` — raw syscalls where the wrappers don't reach.
+
+**Transport:**
+
+- `tokio` — async UDP, timers, tasks.
+- `bytes` — zero-copy buffer handling.
+- `socket2` — fine-grained socket control (TTL, buffer sizes, `SO_PRIORITY`).
+- A reliable-UDP layer: `laminar` or `kcp` crate as a starting point, or roll your own (~400 lines as scoped).
+
+**Serialization:**
+
+- `serde` + `bincode` — compact wire format. Or hand-rolled fixed-layout structs for the hot path.
+- `toml` — config files.
+
+**Timing & measurement (non-negotiable):**
+
+- `quanta` — high-resolution monotonic clock, TSC-backed on x86. Better than `std::time::Instant` for this.
+- `hdrhistogram` — latency histogram capture and percentile computation.
+- `tracing` + `tracing-subscriber` — structured logging, JSON output.
+- `criterion` — microbenchmarks for injection path.
+
+**Observability:**
+
+- `serde_json` — newline-delimited JSON session logs.
+- `metrics` / `metrics-exporter-prometheus` — if you want live counters.
+
+**Analysis (offline, separate tooling):**
+
+- Python: `numpy`, `scipy` (`scipy.stats.lognorm`, `kstest`), `pandas`, `matplotlib`.
+- This is where you fit the log-normal model and run the KS-test from your targets doc.
+
+**Testing:**
+
+- `proptest` — property-based tests for the packet codec.
+- `loom` — concurrency verification for the transport.
+- `cargo-fuzz` — fuzz the wire format parser.
+- `mockall` — trait mocking for platform layers so you can test the scheduler without real hardware.
+
+**Build & release:**
+
+- `cross` — cross-compile Linux targets.
+- `cargo-dist` / `cargo-deb` — packaging.
+- GitHub Actions with a matrix build per platform.
+
+**Networking infra (outside the binary):**
+
+- **Tailscale** — v1 transport, no custom NAT traversal.
+- `iperf3` — bandwidth baseline.
+- `tc netem` (Linux) — induce loss/jitter for benchmark conditions 4–5.
+- `clumsy` (Windows) — same, on Windows.
+
+**Runtime/OS config:**
+
+- `systemd` unit or Windows service wrapper (`windows-service` crate) for auto-start.
+- BIOS/UPS config for power-loss recovery.
+
+## What I'd actually pin
+
+- Language: **Rust**, edition 2024, stable toolchain.
+- Hot-path crates: `evdev`, `uinput`, `windows`, `quanta`, `tokio`.
+- Offline analysis: **Python** with `scipy`/`numpy` only.
+- Everything else is standard Rust tooling.
+
+One caveat worth flagging: the `evdev` and `uinput` crates are maintained but not huge. Budget time to read their source and possibly vendor/patch them — this is the same "you own the low-level layer" tradeoff as the from-scratch decision. That's fine, it's ~a few hundred lines of glue either way.
+
+Do you want me to sketch the actual crate/module layout for the Rust workspace next — client, host, shared protocol, and analysis as separate crates — so you can hand it to Claude/Codex as a starting structure?
+
+5 Citations
+
+Best language in 2026? · community · Discussion #183895
+https://github.com/orgs/community/discussions/183895
+
+Best Programming Languages to Learn in 2026: An In-Depth Guide — Curo
+https://curohq.com/blogs/best-programming-languages-to-learn-in-2026
+
+Most In-demand Programming Languages for 2026
+https://www.itransition.com/developers/in-demand-programming-languages
+
+5 great programming languages to master in 2026 | Pluralsight
+https://www.pluralsight.com/resources/blog/upskilling/five-great-programming-languages-2026
+
+Best Programming Languages for 2026 and Beyond
+https://webandcrafts.com/blog/programming-languages

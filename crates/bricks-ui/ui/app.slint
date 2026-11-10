@@ -1,0 +1,314 @@
+import { Button, CheckBox, LineEdit, ScrollView, TextEdit, AboutSlint } from "std-widgets.slint";
+
+export struct ComputerRow { id: string, name: string, address: string }
+
+component SectionTitle inherits Text {
+    font-size: 22px;
+    font-weight: 600;
+    color: #172231;
+}
+
+component Hint inherits Text {
+    color: #526173;
+    wrap: word-wrap;
+}
+
+export component AppWindow inherits Window {
+    title: "Bricks";
+    preferred-width: 1000px;
+    preferred-height: 800px;
+    min-width: 800px;
+    min-height: 700px;
+    background: #f5f6f8;
+    default-font-family: "Segoe UI";
+    default-font-size: 14px;
+
+    in-out property <int> screen: 0;
+    in property <[ComputerRow]> computers;
+    in-out property <string> selected-id;
+    in-out property <string> selected-name;
+    in-out property <string> selected-address;
+    in property <string> revision;
+    in-out property <string> editor-revision;
+    in property <bool> busy;
+    in property <bool> agent-online;
+    in property <bool> cancellable;
+    in property <bool> live-available;
+    in property <bool> live-active;
+    in property <string> live-role;
+    in-out property <string> host-fingerprint;
+    in-out property <string> client-fingerprint;
+    in-out property <string> bind-ip:"0.0.0.0";
+    in-out property <string> certificate-file;
+    in-out property <string> expected-fingerprint;
+    in-out property <bool> trust-incoming:false;
+    in property <string> status: "Ready. Not connected. Sharing is off.";
+    in property <bool> error;
+    in property <string> activity;
+    in property <string> data-path;
+    in-out property <string> computer-name;
+    in property <string> saved-computer-name;
+    in-out property <string> default-port;
+    in property <string> saved-default-port;
+    in property <string> identity-details: "Set up this PC to create protected local identities. This does not enable sharing or trust another PC.";
+    in property <string> identity-status: "Choose Set up this PC to create or validate your protected local identities.";
+    in property <bool> has-report;
+    in property <string> report-summary;
+    in-out property <bool> advanced: false;
+    // Dialog: 0 closed, 1 new computer, 2 edit, 3 confirm forget.
+    in-out property <int> dialog: 0;
+    in-out property <string> edit-name;
+    in-out property <string> edit-ip;
+    in-out property <string> edit-port;
+    in-out property <string> dialog-error;
+
+    callback add-computer();
+    callback select-computer(string);
+    callback edit-computer();
+    callback save-computer(string, string, string);
+    callback forget-computer();
+    callback save-settings(string, string);
+    callback setup-identities();
+    callback run-check(int);
+    callback export-report();
+    callback open-data-folder();
+    callback cancel-operation();
+    callback start-client();
+    callback start-host();
+    callback browse-certificate();
+    callback trust-peer();
+    callback revoke-peer();
+    callback refresh-peers();
+
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+        HorizontalLayout {
+            Text { text: "Bricks"; font-size: 28px; font-weight: 700; color: #172231; }
+            Rectangle { horizontal-stretch: 1; background: transparent; }
+            Button { text: "Computers"; enabled: root.dialog == 0; primary: root.screen == 0; clicked => { root.screen = 0; } }
+            Button { text: "Share this PC"; enabled: root.dialog == 0; primary: root.screen == 1; clicked => { root.screen = 1; } }
+            Button { text: "Settings"; enabled: root.dialog == 0; primary: root.screen == 2; clicked => { root.screen = 2; } }
+            Button { text: "About"; enabled: root.dialog == 0; clicked => { root.screen = 3; } }
+            Button { text: "Stop input"; enabled: root.agent-online && root.busy && root.cancellable; clicked => { root.cancel-operation(); } }
+        }
+
+        Rectangle {
+            background: white;
+            border-color: #dce1e7;
+            border-width: 1px;
+            border-radius: 4px;
+            vertical-stretch: 1;
+
+            if root.screen == 0: VerticalLayout {
+                padding: 20px;
+                spacing: 12px;
+                HorizontalLayout {
+                    SectionTitle { text: "Computers"; }
+                    Rectangle { horizontal-stretch: 1; background: transparent; }
+                    Button { text: "Add PC"; primary: true; enabled: !root.busy && root.agent-online && root.dialog == 0; clicked => { root.add-computer(); } }
+                }
+                Hint { text: "Save a PC using its LAN, Tailscale or WireGuard IP address."; }
+                if root.computers.length == 0: Rectangle {
+                    height: 140px;
+                    background: #f6f8fa;
+                    VerticalLayout {
+                        padding: 24px;
+                        alignment: center;
+                        Text { text: "No computers saved"; font-weight: 600; horizontal-alignment: center; }
+                        Hint { text: "Choose Add PC to save your first computer."; horizontal-alignment: center; }
+                    }
+                }
+                if root.computers.length > 0: ScrollView {
+                    min-height: 120px;
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        spacing: 6px;
+                        for pc in root.computers: Rectangle {
+                            height: 72px;
+                            background: pc.id == root.selected-id ? #edf4ff : #f7f8fa;
+                            border-color: pc.id == root.selected-id ? #2864b0 : #e5e9ee;
+                            border-width: 1px;
+                            border-radius: 3px;
+                            HorizontalLayout {
+                                padding: 12px;
+                                spacing: 12px;
+                                VerticalLayout {
+                                    Text { text: pc.name; font-weight: 600; overflow: elide; }
+                                    Hint { text: pc.address + "  ·  Saved; availability unknown"; }
+                                }
+                                Button { text: pc.id == root.selected-id ? "Selected" : "Select"; accessible-label: "Select " + pc.name; enabled: !root.busy && root.agent-online && root.dialog == 0; clicked => { root.select-computer(pc.id); } }
+                            }
+                        }
+                    }
+                }
+                if root.selected-id != "": VerticalLayout {
+                    spacing: 8px;
+                    Text { text: root.selected-name; font-weight: 600; }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button { text: "Connect"; enabled: root.live-available && root.agent-online && !root.busy && root.dialog == 0; clicked => { root.start-client(); } }
+                        Button { text: "Edit"; enabled: !root.busy && root.agent-online && root.dialog == 0; clicked => { root.edit-computer(); } }
+                        Button { text: "Forget"; enabled: !root.busy && root.agent-online && root.dialog == 0; clicked => { root.editor-revision = root.revision; root.dialog-error = ""; root.dialog = 3; } }
+                        Rectangle { horizontal-stretch: 1; background: transparent; }
+                    }
+                    Text { text:"Verified host fingerprint"; font-weight:600; }
+                    LineEdit {text <=> root.client-fingerprint;accessible-label:"Verified host fingerprint";enabled:!root.busy;}
+                }
+                Hint { text: "Input only. Import and verify the host's public certificate in Settings once, then Connect. Forwarding starts when you click Start in the foreground capture window. Video is not included."; }
+                if root.computers.length == 0: Rectangle { vertical-stretch: 1; background: transparent; }
+            }
+
+            if root.screen == 1: VerticalLayout {
+                padding: 20px;
+                spacing: 16px;
+                SectionTitle { text: "Share this PC"; }
+                Text { text: root.saved-computer-name; font-size: 18px; font-weight: 600; }
+                Text { text: !root.agent-online ? "Sharing: Unknown - agent unavailable" : root.live-active && root.live-role == "host" ? "Sharing enabled - see session status" : "Sharing: Off"; font-weight: 600; }
+                Text {text:"Verified client fingerprint";font-weight:600;}
+                LineEdit {text <=> root.host-fingerprint;accessible-label:"Verified client fingerprint";enabled:!root.busy;}
+                Text {text:"Listen IP (0.0.0.0 for IPv4 interfaces)";}
+                LineEdit {text <=> root.bind-ip;accessible-label:"Listen IP";enabled:!root.busy;}
+                Hint {text:"Sharing port: " + root.saved-default-port + ". Change it in Settings.";}
+                HorizontalLayout {
+                    Button { text: "Start sharing"; enabled: root.live-available && root.agent-online && !root.busy; clicked => { root.start-host(); } }
+                    Rectangle { horizontal-stretch: 1; background: transparent; }
+                }
+                Hint { text: "Only the verified client may control input. Focus is bound to the host window receiving the first input; switching windows ends sharing. Ctrl+Alt+Shift+F12 stops input on either PC."; }
+                Rectangle { height: 1px; background: #e5e9ee; }
+                Text { text: "Prepare this computer"; font-weight: 600; }
+                Hint { text: "Create or reuse this account's Windows-protected identities. This action does not start a network listener or grant control."; }
+                HorizontalLayout {
+                    Button { text: "Set up this PC"; enabled: !root.busy && root.agent-online; clicked => { root.setup-identities(); } }
+                    Rectangle { horizontal-stretch: 1; background: transparent; }
+                }
+                Hint { text: root.identity-status; }
+                Rectangle { vertical-stretch: 1; background: transparent; }
+            }
+
+            if root.screen == 2: ScrollView {
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 12px;
+                    SectionTitle { text: "Settings"; }
+                    Text { text: "Computer name"; font-weight: 600; }
+                    LineEdit { accessible-label: "Computer name"; text <=> root.computer-name; enabled: !root.busy && root.agent-online && root.dialog == 0; }
+                    Text { text: "Default port for new computers"; font-weight: 600; }
+                    LineEdit { accessible-label: "Default port for new computers"; text <=> root.default-port; enabled: !root.busy && root.agent-online && root.dialog == 0; }
+                    Hint { text: "Changing the default port does not change addresses already saved."; }
+                    HorizontalLayout {
+                        Button { text: "Save settings"; primary: true; enabled: !root.busy && root.agent-online && root.dialog == 0; clicked => { root.save-settings(root.computer-name, root.default-port); } }
+                        Rectangle { horizontal-stretch: 1; background: transparent; }
+                    }
+                    Rectangle { height: 1px; background: #e5e9ee; }
+                    Text { text: "Connection"; font-weight: 600; }
+                    Hint { text: "Use an IP address reachable from this PC. Bricks works over LAN and existing IP tunnels such as Tailscale or WireGuard."; }
+                    Button { text: root.advanced ? "Hide advanced" : "Advanced"; enabled: root.dialog == 0; clicked => { root.advanced = !root.advanced; } }
+                    if root.advanced: VerticalLayout {
+                        spacing: 10px;
+                        Text {text:"Verify a peer (one-time setup)";font-weight:600;}
+                        Hint {text:"Set up both PCs. Copy the other PC's PUBLIC .der certificate from its public folder, then compare its SHA-256 fingerprint on that PC before importing. Never copy identity.json or private keys.";}
+                        HorizontalLayout {
+                            LineEdit {text <=> root.certificate-file;accessible-label:"Peer certificate file";enabled:!root.busy;horizontal-stretch:1;}
+                            Button {text:"Browse certificate";enabled:!root.busy;clicked=>{root.browse-certificate();}}
+                        }
+                        Text {text:"SHA-256 fingerprint shown by the other PC";}
+                        LineEdit {text <=> root.expected-fingerprint;accessible-label:"Expected peer fingerprint";enabled:!root.busy;}
+                        CheckBox {text:"Allow this client to control this PC (otherwise import a host certificate)";checked <=> root.trust-incoming;enabled:!root.busy;}
+                        HorizontalLayout {
+                            Button {text:"Trust verified peer";enabled:root.agent-online&&!root.busy;clicked=>{root.trust-peer();}}
+                            Button {text:"Revoke peer";enabled:root.agent-online&&!root.busy;clicked=>{root.revoke-peer();}}
+                            Button {text:"Refresh peers";enabled:root.agent-online&&!root.busy;clicked=>{root.refresh-peers();}}
+                        }
+                        Rectangle {height:1px;background:#e5e9ee;}
+                        Text { text: "Local checks"; font-weight: 600; }
+                        Hint { text: "Recording only. These checks never send keys to Windows or prove gaming latency."; }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Button { text: "Check recovery"; enabled: !root.busy && root.agent-online; clicked => { root.run-check(0); } }
+                            Button { text: "Check local QUIC"; enabled: !root.busy && root.agent-online; clicked => { root.run-check(1); } }
+                            Button { text: "Export last report"; enabled: !root.busy && root.agent-online && root.has-report; clicked => { root.export-report(); } }
+                        }
+                        Hint { text: root.report-summary; }
+                        HorizontalLayout {
+                            Button { text: "Check network recovery"; enabled: !root.busy && root.agent-online; clicked => { root.run-check(2); } }
+                            Button { text: "Cancel check"; enabled: root.busy && root.cancellable; clicked => { root.cancel-operation(); } }
+                        }
+                        Text { text: "Development identity details"; font-weight: 600; }
+                        TextEdit { text: root.identity-details; read-only: true; height: 150px; wrap: word-wrap; }
+                        Text { text: "Application data"; font-weight: 600; }
+                        TextEdit { text: root.data-path; read-only: true; height: 64px; wrap: word-wrap; }
+                        Button { text: "Open data folder"; clicked => { root.open-data-folder(); } }
+                        Hint { text: "Gaming input uses QUIC over the selected LAN or existing IP tunnel. Session settings are validated and fixed before forwarding starts. Code pairing and discovery are not included in v1."; }
+                    }
+                }
+            }
+
+            if root.screen == 3: VerticalLayout {
+                padding: 20px;
+                spacing: 16px;
+                SectionTitle { text: "About Bricks"; }
+                Text { text: "Bricks 0.1.0 · Windows desktop"; font-weight: 600; }
+                Hint { text: "A simple control interface for the Bricks remote input and streaming project. This first desktop build supports saved computers, settings, identity setup and local checks."; }
+                Hint { text: "A separate Rust agent owns saved state and diagnostics. Dedicated input workers use authenticated QUIC and crash cleanup. Video streaming is not included."; }
+                AboutSlint { }
+                Rectangle { vertical-stretch: 1; background: transparent; }
+            }
+        }
+
+        Rectangle {
+            height: 58px;
+            background: root.error ? #fff1f0 : #edf2f8;
+            border-color: root.error ? #ce5858 : #dce1e7;
+            border-width: 1px;
+            VerticalLayout {
+                padding: 12px;
+                Text { accessible-live-region: polite; text: root.status; wrap: word-wrap; color: root.error ? #8d2020 : #172231; }
+            }
+        }
+        Text { text: "Recent activity"; font-weight: 600; }
+        TextEdit { accessible-label: "Recent activity"; text: root.activity; read-only: true; height: 100px; wrap: word-wrap; }
+    }
+
+    if root.dialog != 0: Rectangle {
+        background: #00000080;
+        TouchArea { }
+        Rectangle {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: 560px;
+            height: root.dialog == 3 ? 290px : 420px;
+            background: white;
+            border-radius: 4px;
+            VerticalLayout {
+                padding: 24px;
+                spacing: 12px;
+                SectionTitle { text: root.dialog == 1 ? "Add PC" : root.dialog == 2 ? "Edit PC" : "Forget computer?"; }
+                if root.dialog != 3: VerticalLayout {
+                    spacing: 8px;
+                    Text { text: "Friendly name"; }
+                    name-input := LineEdit { accessible-label: "Friendly name"; text <=> root.edit-name; enabled: !root.busy && root.agent-online; placeholder-text: "Gaming PC"; init => { self.focus(); } accepted => { ip-input.focus(); } }
+                    Text { text: "LAN or tunnel IP address"; }
+                    ip-input := LineEdit { accessible-label: "LAN or tunnel IP address"; text <=> root.edit-ip; enabled: !root.busy && root.agent-online; placeholder-text: "192.168.1.20"; accepted => { port-input.focus(); } }
+                    Text { text: "Port"; }
+                    port-input := LineEdit { accessible-label: "Port"; text <=> root.edit-port; enabled: !root.busy && root.agent-online; accepted => { root.save-computer(root.edit-name, root.edit-ip, root.edit-port); } }
+                }
+                if root.dialog == 3: Hint { text: "Remove “" + root.selected-name + "” from your saved computers? This does not revoke any separately established peer trust."; }
+                Text { text: root.dialog-error; color: #a32121; wrap: word-wrap; vertical-stretch: 1; }
+                HorizontalLayout {
+                    Rectangle { horizontal-stretch: 1; background: transparent; }
+                    Button { text: "Cancel"; enabled: !root.busy; clicked => { root.dialog = 0; } }
+                    Button {
+                        text: root.dialog == 3 ? "Forget" : "Save";
+                        primary: true;
+                        enabled: !root.busy && root.agent-online;
+                        clicked => {
+                            if root.dialog == 3 { root.forget-computer(); }
+                            else { root.save-computer(root.edit-name, root.edit-ip, root.edit-port); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

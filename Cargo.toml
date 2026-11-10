@@ -1,0 +1,83 @@
+[workspace]
+members = [
+    "crates/bricks-protocol",
+    "crates/bricks-config",
+    "crates/bricks-core",
+    "crates/bricks-transport",
+    "crates/bricks-input-windows",
+    "crates/bricks-client",
+    "crates/bricks-host",
+    "crates/bricks-bench",
+    "crates/bricks-control",
+    "crates/bricks-ui",
+    "crates/bricks-agent",
+    "crates/bricks-lab",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+bricks-protocol = { path = "crates/bricks-protocol" }
+bricks-config = { path = "crates/bricks-config" }
+bricks-core = { path = "crates/bricks-core" }
+bricks-transport = { path = "crates/bricks-transport" }
+bricks-input-windows = { path = "crates/bricks-input-windows" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+thiserror = "2"
+sha2 = "0.10"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
+
+# Presentation is outside the input path; optimize its generated widget code for
+# size while keeping the agent/transport at the normal speed optimization level.
+[profile.release.package.bricks-ui]
+opt-level = "z"
+
+# Agent entry/runtime wiring is control-plane work. Packet/core dependencies keep
+# the speed profile; agent panic unwinding remains enabled for cleanup guards.
+[profile.release.package.bricks-agent]
+opt-level = "z"
+
+# These parse/store control-plane data, never critical input datagrams.
+[profile.release.package.bricks-control]
+opt-level = "z"
+
+[profile.release.package.bricks-config]
+opt-level = "z"
+
+[profile.release.package.serde_json]
+opt-level = "z"
+
+[profile.release.package.toml]
+opt-level = "z"
+
+# Only the presentation executable uses this profile. A UI crash disconnects its
+# pipe; the independent agent retains its normal unwinding/cleanup behavior.
+[profile.desktop]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+strip = "symbols"
+panic = "abort"
+
+# Keep native desktop builds usable on development laptops with limited space.
+[profile.dev]
+debug = 0
+incremental = false
+
+[profile.test]
+debug = 0
+incremental = false
+
